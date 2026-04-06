@@ -27,8 +27,8 @@ sotoki has no default output directory. Always pass `--output` explicitly.
 ### Optional flags are only forwarded when explicitly set
 `--threads`, `--without-images`, and `--debug` default to `None`/`False` and are only appended to the sotoki command when the user passes them. This lets sotoki's own defaults apply rather than duplicating them.
 
-### Dockerfile uses `python:3.14-slim`
-Keeps the image small. The container mounts `./data` to `/app/data` at runtime — it is not baked into the image.
+### Dockerfile uses `python:3.14`
+Uses the full image (not slim) to ensure system libraries like `libcairo2` (required by `cairocffi`/sotoki) and `g++` (required to compile some transitive dependencies) are available without any manual apt installs. The container mounts `./data` to `/app/data` at runtime — it is not baked into the image.
 
 Python 3.14 is required because `sotoki>=3.0.0` dropped the `cchardet` dependency (which was abandoned and failed to compile on Python 3.11+). Earlier Python versions cannot build `cchardet` from source and there is no maintained compatible release.
 
