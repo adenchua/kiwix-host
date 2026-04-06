@@ -1,1 +1,1 @@
-sotoki>=2.0
+sotoki>=3.0.0

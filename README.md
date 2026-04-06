@@ -34,7 +34,7 @@ docker run --rm -v ./data:/app/data kiwix-downloader \
   --description "Q&A for programmers"
 ```
 
-**Option B — Python directly:**
+**Option B — Python directly (requires Python 3.14+):**
 
 ```bash
 pip install -r requirements.txt

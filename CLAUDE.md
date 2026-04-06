@@ -27,8 +27,10 @@ sotoki has no default output directory. Always pass `--output` explicitly.
 ### Optional flags are only forwarded when explicitly set
 `--threads`, `--without-images`, and `--debug` default to `None`/`False` and are only appended to the sotoki command when the user passes them. This lets sotoki's own defaults apply rather than duplicating them.
 
-### Dockerfile uses `python:3.12-slim`
+### Dockerfile uses `python:3.14-slim`
 Keeps the image small. The container mounts `./data` to `/app/data` at runtime — it is not baked into the image.
+
+Python 3.14 is required because `sotoki>=3.0.0` dropped the `cchardet` dependency (which was abandoned and failed to compile on Python 3.11+). Earlier Python versions cannot build `cchardet` from source and there is no maintained compatible release.
 
 ### Docker run mounts `./data` to `/app/data`
 ```bash
