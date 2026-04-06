@@ -58,7 +58,7 @@ This downloads XML dumps from the default mirror (`https://archive.org/download/
 | `--without-images` | off | Exclude images to reduce ZIM size |
 | `--debug` | off | Verbose output |
 
-**Note:** sotoki fetches the live Stack Exchange site during initialization to read CSS and favicon metadata. Stack Exchange blocks the default Python User-Agent with a 403. `sotoki_wrapper.py` works around this by injecting a browser User-Agent — it is invoked automatically by `download.py` and requires no manual action.
+**Note:** sotoki fetches live Stack Exchange URLs during initialization and ZIM conversion (favicons, images). Cloudflare blocks requests that don't present a real browser TLS fingerprint — a browser User-Agent alone is not enough. `sotoki_wrapper.py` handles this automatically by routing all HTTP through `curl_cffi`, which uses BoringSSL to impersonate Firefox at the TLS layer. It also injects a `Referer` header required by Stack Exchange CDNs for sub-resource requests. This is invoked automatically by `download.py` and requires no manual action.
 
 Once the download completes, restart kiwix-serve to pick up the new file:
 

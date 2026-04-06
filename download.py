@@ -68,6 +68,7 @@ def main():
         "--title", args.title,
         "--description", args.description,
         "--output", str(OUTPUT_DIR),
+        "--redis-url", "redis://localhost:6379",
     ]
     if args.threads is not None:
         cmd += ["--threads", str(args.threads)]

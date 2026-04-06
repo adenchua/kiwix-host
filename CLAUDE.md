@@ -18,7 +18,15 @@ Two components:
 ### Downloader wraps sotoki via subprocess
 `download.py` calls sotoki through `subprocess.run` rather than importing sotoki's Python API. This keeps the script thin and insulates it from sotoki internal API changes.
 
-The entry point is `sotoki_wrapper.py`, not the `sotoki` CLI directly. The wrapper monkey-patches `requests.Session.__init__` to inject a Firefox-like User-Agent before delegating to `sotoki.__main__.main()`. This is necessary because sotoki fetches `https://{domain}/` during initialization and Stack Exchange / Cloudflare blocks requests with the default `python-requests/x.x.x` UA with a 403. There is no sotoki CLI flag to skip this fetch or set a custom UA.
+The entry point is `sotoki_wrapper.py`, not the `sotoki` CLI directly. The wrapper patches `requests.Session` and the module-level request functions before delegating to `sotoki.__main__.main()`. There is no sotoki CLI flag to configure HTTP behavior.
+
+The wrapper does three things:
+
+1. **Firefox TLS impersonation via `curl_cffi`** — replaces `requests.Session` with `_FirefoxSession(curl_cffi.requests.Session)`. This produces a real BoringSSL/Firefox TLS handshake, bypassing Cloudflare bot detection that rejects Python's default JA3 fingerprint. A User-Agent header alone is insufficient; Cloudflare checks the TLS fingerprint.
+
+2. **`requests` API compatibility shim (`_CompatResponse`)** — `curl_cffi` returns its own `Headers` and `Response` types that fail `beartype` checks inside `zimscraperlib` (which expects `requests.structures.CaseInsensitiveDict`). `_CompatResponse` wraps every curl_cffi response and converts `headers` to the expected type. It also overrides `raise_for_status` to raise `requests.exceptions.HTTPError` (not `curl_cffi`'s own error type) and logs the URL to stderr when a 4xx occurs.
+
+3. **`Referer` injection + fallback chain** — some CDN-hosted sub-resources (favicons, images) return 403 without a `Referer` header. The wrapper injects `Referer: https://<host>/` on every request unless already set. If curl_cffi raises a transport-level exception (e.g. BoringSSL TLS 1.3 downgrade rejection on non-Cloudflare CDNs like `i.stack.imgur.com`), it falls back to the original `requests.Session`. If curl_cffi gets a 403, the fallback is also attempted before giving up.
 
 ### Output directory is resolved relative to `__file__`
 `OUTPUT_DIR = Path(__file__).parent / "data"` so the script works correctly regardless of the working directory the user invokes it from.
