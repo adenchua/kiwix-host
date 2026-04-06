@@ -58,6 +58,8 @@ This downloads XML dumps from the default mirror (`https://archive.org/download/
 | `--without-images` | off | Exclude images to reduce ZIM size |
 | `--debug` | off | Verbose output |
 
+**Note:** sotoki fetches the live Stack Exchange site during initialization to read CSS and favicon metadata. Stack Exchange blocks the default Python User-Agent with a 403. `sotoki_wrapper.py` works around this by injecting a browser User-Agent — it is invoked automatically by `download.py` and requires no manual action.
+
 Once the download completes, restart kiwix-serve to pick up the new file:
 
 ```bash

@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 OUTPUT_DIR = Path(__file__).parent / "data"
+WRAPPER_PATH = Path(__file__).parent / "sotoki_wrapper.py"
 
 DEFAULT_MIRROR = "https://archive.org/download/stackexchange"
 
@@ -60,7 +61,8 @@ def main():
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     cmd = [
-        "sotoki",
+        sys.executable,
+        str(WRAPPER_PATH),
         "--domain", args.domain,
         "--mirror", args.mirror,
         "--title", args.title,

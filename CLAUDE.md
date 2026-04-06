@@ -16,7 +16,9 @@ Two components:
 `/data/*.zim` is gitignored. The `./data/` directory is tracked via `.gitkeep` only.
 
 ### Downloader wraps sotoki via subprocess
-`download.py` calls the `sotoki` CLI through `subprocess.run` rather than importing sotoki's Python API. This keeps the script thin and insulates it from sotoki internal API changes.
+`download.py` calls sotoki through `subprocess.run` rather than importing sotoki's Python API. This keeps the script thin and insulates it from sotoki internal API changes.
+
+The entry point is `sotoki_wrapper.py`, not the `sotoki` CLI directly. The wrapper monkey-patches `requests.Session.__init__` to inject a Firefox-like User-Agent before delegating to `sotoki.__main__.main()`. This is necessary because sotoki fetches `https://{domain}/` during initialization and Stack Exchange / Cloudflare blocks requests with the default `python-requests/x.x.x` UA with a 403. There is no sotoki CLI flag to skip this fetch or set a custom UA.
 
 ### Output directory is resolved relative to `__file__`
 `OUTPUT_DIR = Path(__file__).parent / "data"` so the script works correctly regardless of the working directory the user invokes it from.
