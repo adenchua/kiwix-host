@@ -6,9 +6,10 @@ Guidelines and decisions for working on this repository.
 
 kiwix-host is a Docker Compose wrapper around `kiwix-serve` that serves ZIM archives locally for offline access. ZIM files live in `./data/` and are never committed to git.
 
-Two components:
+Three components:
 - **kiwix-serve** (`docker-compose.yml`) — serves ZIM files over HTTP
 - **downloader** (`download.py` + `Dockerfile`) — downloads Stack Exchange sites as ZIM files using sotoki
+- **converter** (`convert.py` + `Dockerfile`) — converts a locally pre-downloaded Stack Exchange 7z dump into a ZIM file using sotoki
 
 ## Architecture Decisions
 
@@ -47,6 +48,16 @@ Python 3.14 is required because `sotoki>=3.0.0` dropped the `cchardet` dependenc
 docker run --rm -v ./data:/app/data kiwix-downloader ...
 ```
 This aligns with `OUTPUT_DIR` inside the container (`/app/data` = `Path(__file__).parent / "data"`).
+
+### Local dump conversion uses a temporary localhost HTTP server
+`convert.py` feeds a local 7z dump to sotoki without modifying sotoki internals. sotoki always fetches its dump via `{mirror}/{domain}.7z` — there is no `--local-dump` flag. `convert.py` works around this by starting a `http.server.HTTPServer` (stdlib) on a free port serving the dump's parent directory, then passing `http://127.0.0.1:{port}` as `--mirror`. The server runs in a `daemon=True` thread and is shut down after sotoki exits.
+
+The dump filename must be `{domain}.7z` (e.g. `stackoverflow.com.7z`) because sotoki constructs the download URL as `{mirror}/{domain}.7z`. This is validated early with a clear error message.
+
+For Docker, the input directory must be mounted: `-v ./input:/app/input`.
+
+### `entrypoint.sh` dispatches on the first argument
+When the first argument is `convert`, the entrypoint shifts it off and runs `convert.py`. Otherwise it runs `download.py`. Redis is started unconditionally since sotoki requires it regardless of source mode.
 
 ### Downloader Dockerfile is separate from docker-compose.yml
 `docker-compose.yml` uses a prebuilt image (`ghcr.io/kiwix/kiwix-serve:latest`) and has no `build:` key. The `Dockerfile` is solely for the downloader and must be built manually before use.

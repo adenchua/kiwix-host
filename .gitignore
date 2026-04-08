@@ -185,8 +185,11 @@ cython_debug/
 .AppleDouble
 .LSOverride
 
-# ZIM archives
-/data/*.zim
+# Data and input directories (all files, tracked via .gitkeep only)
+/data/*
+!/data/.gitkeep
+/input/*
+!/input/.gitkeep
 
 # Local env
 .env

@@ -60,7 +60,48 @@ This downloads XML dumps from the default mirror (`https://archive.org/download/
 
 **Note:** sotoki fetches live Stack Exchange URLs during initialization and ZIM conversion (favicons, images). Cloudflare blocks requests that don't present a real browser TLS fingerprint — a browser User-Agent alone is not enough. `sotoki_wrapper.py` handles this automatically by routing all HTTP through `curl_cffi`, which uses BoringSSL to impersonate Firefox at the TLS layer. It also injects a `Referer` header required by Stack Exchange CDNs for sub-resource requests. This is invoked automatically by `download.py` and requires no manual action.
 
-Once the download completes, restart kiwix-serve to pick up the new file:
+## Converting a Local Dump
+
+If you already have a Stack Exchange 7z dump on disk (e.g. from [archive.org/details/stackexchange](https://archive.org/details/stackexchange)), use `convert.py` to convert it to ZIM without re-downloading.
+
+Place the dump in `./input/` — the filename must be `{domain}.7z` (e.g. `stackoverflow.com.7z`).
+
+**Option A — Docker:**
+
+```bash
+docker build -t kiwix-downloader .
+docker run --rm -v ./data:/app/data -v ./input:/app/input kiwix-downloader convert \
+  --dump /app/input/stackoverflow.com.7z \
+  --title "Stack Overflow" \
+  --description "Q&A for programmers"
+```
+
+**Option B — Python directly:**
+
+```bash
+python convert.py \
+  --dump ./input/stackoverflow.com.7z \
+  --title "Stack Overflow" \
+  --description "Q&A for programmers"
+```
+
+`convert.py` serves the dump directory over a temporary localhost HTTP server and passes that as the mirror URL to sotoki — no changes to sotoki internals required.
+
+**Options:**
+
+| Flag | Default | Description |
+| --- | --- | --- |
+| `--dump` | _(required)_ | Path to local `.7z` dump file |
+| `--domain` | inferred from filename | Stack Exchange domain (e.g. `stackoverflow.com`) |
+| `--title` | _(required)_ | ZIM title (max 30 characters) |
+| `--description` | _(required)_ | ZIM description (max 80 characters) |
+| `--threads` | sotoki default (1) | Worker threads |
+| `--without-images` | off | Exclude images to reduce ZIM size |
+| `--debug` | off | Verbose output |
+
+**Note:** sotoki still fetches favicons, CSS, and images from live Stack Exchange URLs during conversion. An internet connection is still needed; use `--without-images` to minimize external requests.
+
+Once the conversion completes, restart kiwix-serve to pick up the new file:
 
 ```bash
 docker compose restart
